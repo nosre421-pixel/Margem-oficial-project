@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>MARGEM — Erson Mário Zebra</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;1,9..144,400;1,9..144,500&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,500;1,7..72,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --white:#ffffff;
+  --paper:#fdfdfc;
+  --ink:#0d1b3d;
+  --ink-soft:#3a4666;
+  --blue-deep:#0d2b6b;
+  --blue:#1544a8;
+  --blue-mid:#2f6fe0;
+  --blue-sky:#5ac8f2;
+  --blue-mist:#eef4fd;
+  --line:rgba(13,43,107,0.12);
+  --serif:'Fraunces', Georgia, serif;
+  --read:'Literata', Georgia, serif;
+  --ui:'Inter', -apple-system, sans-serif;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--white);
+  color:var(--ink);
+  font-family:var(--ui);
+  overflow-x:hidden;
+  -webkit-user-select:none;
+  user-select:none;
+  -webkit-touch-callout:none;
+}
+::selection{background:transparent;}
+img{ -webkit-user-drag:none; user-drag:none; pointer-events:none; }
+#app{position:relative;width:100%;min-height:100vh;}
+.screen{
+  position:fixed; inset:0;
+  display:flex; align-items:center; justify-content:center;
+  flex-direction:column;
+  background:var(--white);
+  opacity:0; visibility:hidden;
+  transition:opacity 1.1s cubic-bezier(.4,0,.2,1);
+  padding:8vh 6vw;
+  text-align:center;
+}
+.screen.active{opacity:1; visibility:visible;}
+.screen.reading{ display:block; text-align:left; overflow-y:auto; padding:0; }
+
+/* ---------- margin line signature motif ---------- */
+.margin-line{
+  position:absolute; top:0; bottom:0; left:50%;
+  width:1px; background:linear-gradient(180deg, transparent, var(--blue-sky) 20%, var(--blue) 50%, var(--blue-sky) 80%, transparent);
+  opacity:0; transform:scaleY(0); transform-origin:center;
+  transition:opacity 1.4s ease, transform 1.6s cubic-bezier(.16,1,.3,1);
+  pointer-events:none;
+}
+.margin-line.show{ opacity:.55; transform:scaleY(1); }
+
+/* ---------- screen 0: white hold ---------- */
+#s-white{ background:var(--white); }
+
+/* ---------- screen 1: welcome reveal ---------- */
+#s-welcome .wrap{ opacity:0; transform:translateY(14px); transition:opacity 1.6s ease, transform 1.6s cubic-bezier(.16,1,.3,1); }
+#s-welcome.reveal .wrap{ opacity:1; transform:translateY(0); }
+.wordmark{ font-family:var(--serif); font-weight:600; font-style:italic; font-size:clamp(2.6rem,7vw,4.6rem); color:var(--blue-deep); letter-spacing:-0.01em; line-height:1.05; }
+.wordmark small{ display:block; font-family:var(--ui); font-style:normal; font-weight:500; letter-spacing:0.22em; font-size:0.32em; color:var(--blue-mid); margin-bottom:0.6em; text-transform:uppercase; }
+
+.btn{
+  appearance:none; border:1.5px solid var(--blue-deep); background:transparent; color:var(--blue-deep);
+  font-family:var(--ui); font-weight:600; font-size:0.95rem; letter-spacing:0.06em; text-transform:uppercase;
+  padding:0.95em 2.4em; border-radius:100px; cursor:pointer; margin-top:2.6em;
+  display:inline-flex; align-items:center; gap:0.6em;
+  transition:background .35s ease, color .35s ease, transform .25s ease, box-shadow .35s ease;
+}
+.btn:hover{ background:var(--blue-deep); color:var(--white); transform:translateY(-1px); box-shadow:0 10px 26px -12px rgba(13,43,107,.55); }
+.btn:active{ transform:translateY(0); }
+.btn.ghost{ border-color:var(--line); color:var(--ink-soft); }
+.btn.ghost:hover{ background:var(--ink-soft); color:var(--white); border-color:var(--ink-soft); box-shadow:0 10px 26px -14px rgba(13,43,107,.35); }
+.btn svg{ width:1em; height:1em; transition:transform .3s ease; }
+.btn:hover svg{ transform:translateX(3px); }
+.btn-row{ display:flex; gap:1em; flex-wrap:wrap; justify-content:center; margin-top:2.6em; }
+.btn-row .btn{ margin-top:0; }
+
+/* ---------- screen 2: gate question ---------- */
+.gate-q{ font-family:var(--serif); font-style:italic; font-weight:400; font-size:clamp(1.4rem,3.6vw,2.1rem); color:var(--ink); max-width:640px; line-height:1.4; }
+
+/* ---------- screen 3: visitor form ---------- */
+.form-card{ width:100%; max-width:420px; }
+.form-eyebrow{ font-family:var(--ui); font-size:0.78rem; letter-spacing:0.18em; text-transform:uppercase; color:var(--blue-mid); margin-bottom:0.9em; font-weight:600; }
+.form-title{ font-family:var(--serif); font-style:italic; font-size:clamp(1.3rem,3.2vw,1.7rem); color:var(--ink); line-height:1.45; margin-bottom:2.2em; }
+.field{ text-align:left; margin-bottom:1.5em; }
+.field label{ display:block; font-size:0.78rem; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:0.5em; font-weight:500; }
+.field input, .field select{
+  width:100%; border:none; border-bottom:1.5px solid var(--line); background:transparent;
+  font-family:var(--read); font-size:1.05rem; color:var(--ink); padding:0.5em 0.1em;
+  outline:none; transition:border-color .3s ease; -webkit-user-select:text; user-select:text;
+}
+.field input:focus, .field select:focus{ border-color:var(--blue); }
+.field.optional label:after{ content:" (opcional)"; text-transform:none; letter-spacing:0; opacity:.6; }
+
+/* ---------- logo / quote transitions ---------- */
+.logo-big{ font-family:var(--serif); font-weight:600; font-style:italic; font-size:clamp(3rem,9vw,5.5rem); color:var(--blue-deep); opacity:0; transform:scale(.94); transition:opacity 1.8s ease, transform 1.8s cubic-bezier(.16,1,.3,1); }
+#s-logo.reveal .logo-big{ opacity:1; transform:scale(1); }
+.quote-text{ font-family:var(--serif); font-style:italic; font-weight:400; font-size:clamp(1.3rem,3.4vw,1.9rem); color:var(--ink); max-width:600px; line-height:1.55; opacity:0; transition:opacity 1.6s ease; }
+#s-quote.reveal .quote-text{ opacity:1; }
+
+/* ---------- cover ---------- */
+.cover-frame{ width:min(60vw,300px); aspect-ratio:2/3; position:relative; margin:0 auto 2.2em; cursor:pointer; }
+.cover-art{ width:100%; height:100%; border-radius:2px; background:linear-gradient(160deg,var(--blue-deep) 0%, var(--blue) 55%, var(--blue-sky) 100%); position:relative; overflow:hidden; box-shadow:0 40px 70px -30px rgba(13,43,107,.5); transition:transform .5s cubic-bezier(.16,1,.3,1); }
+.cover-frame:hover .cover-art{ transform:translateY(-6px) scale(1.015); }
+.cover-art:before{ content:""; position:absolute; left:0; right:0; bottom:0; height:46%; background:radial-gradient(120% 100% at 30% 100%, rgba(255,255,255,.16), transparent 70%); }
+.cover-line{ position:absolute; top:0; bottom:0; left:14%; width:1px; background:rgba(255,255,255,.35); }
+.cover-title{ position:absolute; left:22%; top:38%; font-family:var(--serif); font-style:italic; font-weight:600; color:var(--white); font-size:1.9rem; letter-spacing:-0.01em; }
+.cover-sub{ position:absolute; left:22%; top:57%; font-family:var(--ui); font-size:.68rem; letter-spacing:.18em; text-transform:uppercase; color:rgba(255,255,255,.75); }
+.cover-caption{ font-family:var(--ui); font-size:.82rem; color:var(--ink-soft); letter-spacing:.02em; }
+
+/* ---------- reading screen ---------- */
+.reader-top{
+  position:fixed; top:0; left:0; right:0; z-index:20; background:rgba(255,255,255,.86); backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line); padding:0.9em 1.4em; display:flex; align-items:center; gap:1em;
+}
+.reader-top .cycle-label{ font-family:var(--ui); font-size:.68rem; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--blue); white-space:nowrap; }
+.progress-track{ flex:1; height:3px; background:var(--line); border-radius:2px; overflow:hidden; }
+.progress-fill{ height:100%; background:linear-gradient(90deg,var(--blue-deep),var(--blue-sky)); width:0%; transition:width .7s cubic-bezier(.4,0,.2,1); }
+.reader-top .pct{ font-family:var(--ui); font-size:.72rem; color:var(--ink-soft); width:2.6em; text-align:right; }
+.reader-body{ max-width:640px; margin:0 auto; padding:9em 6vw 8em; }
+.chap-eyebrow{ font-family:var(--ui); font-size:.72rem; letter-spacing:.18em; text-transform:uppercase; color:var(--blue-mid); font-weight:600; margin-bottom:1em; opacity:0; transform:translateY(8px); transition:opacity .8s ease, transform .8s ease; }
+.chap-title{ font-family:var(--serif); font-style:italic; font-weight:600; font-size:clamp(2rem,6vw,3rem); color:var(--blue-deep); margin:0 0 1.1em; line-height:1.1; opacity:0; transform:translateY(10px); transition:opacity .9s ease .05s, transform .9s ease .05s; }
+.chap-body{ opacity:0; transition:opacity 1s ease .15s; }
+.reader-body.in .chap-eyebrow, .reader-body.in .chap-title, .reader-body.in .chap-body{ opacity:1; transform:none; }
+.chap-body p{ font-family:var(--read); font-size:clamp(1.05rem,2vw,1.2rem); line-height:1.9; color:var(--ink); margin:0 0 1.35em; -webkit-user-select:text; user-select:text; }
+.chap-body.poem p{ font-style:italic; text-align:left; }
+.reader-nav{ display:flex; justify-content:space-between; align-items:center; margin-top:3.5em; padding-top:2em; border-top:1px solid var(--line); }
+.nav-btn{ background:none; border:none; font-family:var(--ui); font-size:.85rem; font-weight:600; letter-spacing:.04em; color:var(--blue-deep); cursor:pointer; display:flex; align-items:center; gap:.5em; padding:.6em; }
+.nav-btn[disabled]{ opacity:.25; cursor:default; }
+.nav-btn svg{ width:1em; height:1em; }
+
+.index-toggle{
+  appearance:none; border:1px solid var(--line); background:transparent; color:var(--blue-deep);
+  font-family:var(--ui); font-size:.68rem; font-weight:600; letter-spacing:.06em; text-transform:uppercase;
+  padding:.5em 1em; border-radius:100px; cursor:pointer; white-space:nowrap; flex-shrink:0;
+  display:none; align-items:center; gap:.4em; transition:background .3s ease, color .3s ease;
+}
+.index-toggle:hover{ background:var(--blue-deep); color:var(--white); }
+.index-toggle.show{ display:inline-flex; }
+
+.index-drawer{
+  position:fixed; inset:0; background:rgba(13,27,61,.38); z-index:40;
+  display:flex; justify-content:flex-end; opacity:0; pointer-events:none; transition:opacity .4s ease;
+}
+.index-drawer.show{ opacity:1; pointer-events:all; }
+.index-panel{
+  width:min(360px,86vw); height:100%; background:var(--white); padding:3.2em 1.8em 2.4em; overflow-y:auto;
+  position:relative; transform:translateX(24px); transition:transform .4s cubic-bezier(.16,1,.3,1);
+  box-shadow:-24px 0 60px -24px rgba(13,43,107,.35); -webkit-user-select:text; user-select:text;
+}
+.index-drawer.show .index-panel{ transform:translateX(0); }
+.index-close{
+  position:absolute; top:1.2em; right:1.2em; width:2.2em; height:2.2em; border-radius:50%;
+  border:1px solid var(--line); background:transparent; color:var(--ink-soft); font-family:var(--ui);
+  font-size:1rem; cursor:pointer; display:flex; align-items:center; justify-content:center;
+}
+.index-eyebrow{ font-family:var(--ui); font-size:.68rem; letter-spacing:.16em; text-transform:uppercase; color:var(--blue-mid); font-weight:600; margin-bottom:1.4em; }
+.index-cycle-title{ font-family:var(--serif); font-style:italic; font-weight:600; font-size:1.15rem; color:var(--blue-deep); margin:1.3em 0 .5em; line-height:1.35; }
+.index-item{
+  font-family:var(--ui); font-size:.85rem; padding:.55em 0; border-bottom:1px solid var(--line);
+  color:var(--ink-soft); display:flex; align-items:center; gap:.6em; line-height:1.4;
+}
+.index-item .dot{ width:6px; height:6px; border-radius:50%; background:var(--line); flex-shrink:0; }
+.index-item.read{ color:var(--ink); font-weight:500; }
+.index-item.read .dot{ background:var(--blue); }
+.index-item.locked{ opacity:.55; font-style:italic; }
+
+/* reflection overlay */
+.reflect-overlay{ position:fixed; inset:0; background:var(--white); z-index:30; display:flex; align-items:center; justify-content:center; flex-direction:column; padding:8vh 6vw; opacity:0; pointer-events:none; transition:opacity 1s ease; text-align:center; }
+.reflect-overlay.show{ opacity:1; pointer-events:all; }
+.reflect-overlay p{ font-family:var(--serif); font-style:italic; font-size:clamp(1.3rem,3.8vw,2rem); color:var(--blue-deep); line-height:1.6; margin:0 0 .3em; opacity:0; transform:translateY(10px); transition:opacity .9s ease, transform .9s ease; }
+.reflect-overlay.show p{ opacity:1; transform:none; }
+
+/* ---------- ending ---------- */
+.end-final{ font-family:var(--serif); font-style:italic; font-size:clamp(1.6rem,4vw,2.3rem); color:var(--blue-deep); max-width:640px; line-height:1.5; margin-bottom:.4em; }
+.end-sig{ font-family:var(--ui); font-size:.75rem; letter-spacing:.18em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:2.4em; }
+
+/* misc */
+.small-note{ font-family:var(--ui); font-size:.78rem; color:var(--ink-soft); margin-top:1.4em; max-width:420px; line-height:1.6; }
+.tap-hint{ font-family:var(--ui); font-size:.75rem; letter-spacing:.1em; text-transform:uppercase; color:var(--blue-mid); margin-top:.8em; }
+.brand-footer{ position:fixed; bottom:1.2em; left:0; right:0; text-align:center; font-family:var(--ui); font-size:.68rem; letter-spacing:.14em; color:var(--line); text-transform:uppercase; z-index:5; user-select:none;}
+
+textarea{ width:100%; min-height:120px; border:1.5px solid var(--line); border-radius:10px; font-family:var(--read); font-size:1rem; padding:.9em; color:var(--ink); resize:vertical; outline:none; -webkit-user-select:text; user-select:text; }
+textarea:focus{ border-color:var(--blue); }
+
+/* admin */
+#s-admin{ align-items:flex-start; text-align:left; overflow-y:auto; padding:6vh 6vw; }
+.admin-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:1em; width:100%; max-width:900px; margin:2em 0; }
+.admin-card{ border:1px solid var(--line); border-radius:12px; padding:1.2em; }
+.admin-card .n{ font-family:var(--serif); font-size:2rem; color:var(--blue-deep); font-weight:600; }
+.admin-card .l{ font-family:var(--ui); font-size:.72rem; text-transform:uppercase; letter-spacing:.1em; color:var(--ink-soft); margin-top:.3em; }
+.admin-list{ width:100%; max-width:900px; }
+.admin-list h4{ font-family:var(--ui); font-size:.78rem; text-transform:uppercase; letter-spacing:.12em; color:var(--blue-mid); margin:1.6em 0 .6em; }
+.admin-row{ font-family:var(--read); font-size:.92rem; padding:.6em 0; border-bottom:1px solid var(--line); -webkit-user-select:text; user-select:text; }
+
+@media (prefers-reduced-motion: reduce){ *{transition-duration:.01ms !important;} }
+
+@media (max-width:640px){
+  .reader-body{ padding:8em 6vw 8em; }
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div class="margin-line" id="marginLine"></div>
+
+  <div class="screen active" id="s-white"></div>
+
+  <div class="screen" id="s-welcome">
+    <div class="wrap">
+      <div class="wordmark"><small>coletânea literária</small>Bem-vindo à<br>Margem.</div>
+      <button class="btn" id="btnComecar">Começar
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="screen" id="s-gate">
+    <p class="gate-q">Estás preparado para atravessar esta margem?</p>
+    <div class="btn-row">
+      <button class="btn ghost" id="btnAindaNao">Ainda não</button>
+      <button class="btn" id="btnSim">Sim, vamos começar
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="screen" id="s-notyet">
+    <p class="gate-q">Sem pressa.</p>
+    <p class="small-note" style="max-width:460px">A margem vai continuar aqui, à espera, sempre que estiveres pronto para a atravessar.</p>
+    <div class="btn-row">
+      <button class="btn" id="btnVoltarGate">Voltar</button>
+    </div>
+  </div>
+
+  <div class="screen" id="s-form">
+    <div class="form-card">
+      <div class="form-eyebrow">Antes de atravessar esta margem…</div>
+      <div class="form-title">Gostaria de conhecer quem caminha por ela.</div>
+      <div class="field optional">
+        <label>Nome</label>
+        <input type="text" id="inpName" placeholder="Como preferes ser chamado" autocomplete="off">
+      </div>
+      <div class="field">
+        <label>Idade</label>
+        <input type="number" id="inpAge" min="1" max="120" placeholder="Ex: 19" autocomplete="off">
+      </div>
+      <div class="field">
+        <label>País</label>
+        <input type="text" id="inpCountry" placeholder="Ex: Moçambique" autocomplete="off">
+      </div>
+      <div class="field optional">
+        <label>Como conheceu o projeto</label>
+        <input type="text" id="inpFound" placeholder="Ex: Instagram, um amigo…" autocomplete="off">
+      </div>
+      <button class="btn" id="btnEntrar" style="width:100%; justify-content:center;">Entrar
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="screen" id="s-logo">
+    <div class="logo-big">MARGEM</div>
+  </div>
+
+  <div class="screen" id="s-quote">
+    <p class="quote-text">Algumas viagens começam com um passo.<br>Outras começam com uma página.</p>
+  </div>
+
+  <div class="screen" id="s-cover">
+    <div class="cover-frame" id="btnAbrirLivro">
+      <div class="cover-art">
+        <div class="cover-line"></div>
+        <div class="cover-title">Margem</div>
+        <div class="cover-sub">Erson Mário Zebra</div>
+      </div>
+    </div>
+    <div class="cover-caption">toca na capa para abrir</div>
+  </div>
+
+  <div class="screen reading" id="s-reader">
+    <div class="reader-top">
+      <div class="cycle-label" id="cycleLabel">Prefácio</div>
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="pct" id="progressPct">0%</div>
+      <button class="index-toggle" id="btnIndex" type="button">Índice</button>
+    </div>
+    <div class="reader-body" id="readerBody">
+      <div class="chap-eyebrow" id="chapEyebrow"></div>
+      <h1 class="chap-title" id="chapTitle"></h1>
+      <div class="chap-body" id="chapBody"></div>
+      <div class="reader-nav">
+        <button class="nav-btn" id="navPrev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Anterior</button>
+        <button class="nav-btn" id="navNext">Seguinte<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="index-drawer" id="indexDrawer">
+    <div class="index-panel">
+      <button class="index-close" id="btnCloseIndex" type="button">&#10005;</button>
+      <div class="index-eyebrow">Onde estás</div>
+      <div id="indexContent"></div>
+    </div>
+  </div>
+
+  <div class="reflect-overlay" id="reflectOverlay">
+    <div id="reflectText"></div>
+    <button class="btn" id="btnContinuar" style="margin-top:2em;">Continuar</button>
+  </div>
+
+  <div class="screen" id="s-end">
+    <p class="small-note">Obrigado por atravessar esta margem.</p>
+    <p class="end-final">"O mundo muda quando alguém decide<br>não voltar a ser quem era."</p>
+    <div class="end-sig">— Margem</div>
+    <div class="btn-row">
+      <button class="btn" id="btnEscrever">Escrever ao autor</button>
+      <button class="btn ghost" id="btnPartilhar">Partilhar</button>
+      <button class="btn ghost" id="btnRecomecar">Recomeçar a leitura</button>
+    </div>
+  </div>
+
+  <div class="screen" id="s-write">
+    <div class="form-card" style="max-width:480px;">
+      <div class="form-eyebrow">Uma palavra para o autor</div>
+      <div class="form-title">O que ficou contigo depois desta travessia?</div>
+      <textarea id="inpMessage" placeholder="Escreve aqui a tua mensagem…"></textarea>
+      <div class="btn-row" style="margin-top:1.6em;">
+        <button class="btn ghost" id="btnCancelarMsg">Voltar</button>
+        <button class="btn" id="btnEnviarMsg">Enviar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="screen" id="s-sent">
+    <p class="gate-q">A tua mensagem atravessou a margem.</p>
+    <p class="small-note">Obrigado por partilhares isto com o autor.</p>
+    <div class="btn-row"><button class="btn" id="btnVoltarFimSent">Voltar ao início</button></div>
+  </div>
+
+  <div class="screen" id="s-admin"></div>
+
+  <div class="brand-footer" id="brandFooter">margem — erson mário zebra</div>
+</div>
+
+<script id="margem-data" type="application/json">{"cyclesMeta": {"1": "CICLO I — O CAOS", "2": "CICLO II — TEMPO, CURA E SACRIFÍCIO", "3": "CICLO III — SER A DIFERENÇA E A VOZ", "4": "CICLO IV — OURO NEGRO", "5": "CICLO V — A VOZ QUE NÃO SE CALE…"}, "chapters": [{"slug": "prefacio", "title": "Prefácio", "subtitle": "Antes da Primeira Margem", "kind": "prose", "cycle": 0, "body": ["Escrever sempre foi o modo mais honesto que encontrei para não desaparecer.", "Entre medos, memórias, perguntas sem resposta e o barulho do mundo, descobri que a minha própria mente era um território selvagem — às vezes abrigo, outras vezes prisão.", "Foi aí que nasceu esta coletânea.", "Aqui não há heróis, nem verdades perfeitas.", "Há apenas um jovem que aprendeu a caminhar por dentro de si mesmo, tropeçando, sangrando, levantando.", "Cada texto é uma margem onde encostei a alma por alguns instantes, tentando entender quem sou, quem fomos, e quem podemos ser — como indivíduos, como jovens africanos, como seres humanos num continente que ainda luta para encontrar o seu próprio reflexo.", "Escrevi estes textos para encerrar um ciclo.", "Mas talvez, enquanto os lês, abras o teu.", "Seja bem-vindo àquilo que restou de mim — e ao que ainda estou a aprender a reconstruir…"]}, {"slug": "margem", "title": "Margem…", "subtitle": null, "kind": "poem", "cycle": 1, "body": ["POR VEZES,", "ME SINTO À BEIRA DO PRECIPÍCIO.", "POR VEZES,", "SÓ QUERO ESTAR LONGE DO MUNDO.", "POR VEZES, A MARGEM ME ABRAÇA,", "E O MUNDO QUE NÃO ME ENTENDE", "CHAMA-ME DE MARGINAL.", "POR VEZES, A DOR REALMENTE DOI,", "MAS ELA EDUCA,", "MAIS DO QUE UMA MÃE.", "POR VEZES, NA MARGEM…", "VEJO COMEÇOS E FINS.", "E, POR VEZES,", "SÓ QUERO ENCONTRAR UM FIM…"]}, {"slug": "onde-estou", "title": "Onde estou?", "subtitle": null, "kind": "prose", "cycle": 1, "body": ["Nunca fui de falar abertamente sobre o meu ser. Acho que isso tem a ver com algum conceito de filosofia…", "Talvez seja um enigma…", "Mas uma das grandes questões sem princípio e fim.", "Um pouco sombrio tentar explorar-me…", "Viver é uma das grandes questões sem resposta.", "Ao olhar para aquilo que é o nosso habitar natural, é difícil encaixar-se nos padrões da sociedade sem mudar de comportamento ou a forma de ser e estar.", "Eu quero que alguém me salve.", "Eh… tentei ser diferente, criticaram…", "Tentei inovar, não apreciaram…", "Chamar-me-ão de vilão por ser modesto à minha maneira.", "Tudo que toco morre. Farto estou e quase que me vem o burnout de tanto pensar…", "Acho que muitos estão contra os meus factos.", "Em minha mente criei um universo em que só a diferença existe…"]}, {"slug": "a-sombra", "title": "A sombra", "subtitle": null, "kind": "prose", "cycle": 1, "body": ["Na sombra, encontro um lugar seguro, embora carregado de solidão. Aqui, posso ser sem me expor. Posso gritar, mas apenas dentro de mim, porque receio que o som da minha voz se perca nas mentes pobres em empatia e compreensão. Afinal, o que é pior: ser julgado por aquilo que sou ou ser ignorado como se não fosse nada?", "Mas o que realmente me assusta?", "Será o medo que tenho pelo meu ser, ou será o medo do que o meu verdadeiro ser pode fazer? Vivo em universos paralelos dentro da minha mente — várias personalidades criadas ao longo do tempo, lições guardadas que nunca aprendo.", "Mas de onde vem tal medo?", "O medo que sinto é desconhecido e surge em momentos incertos. Mas é certo afirmar que a minha mente não quero explorar. Talvez seja por isso que me revolto comigo mesmo. A revolução das emoções domina o meu ser, o meu consciente.", "Em crises existenciais, não conheço a pessoa que sou. Não sei para onde vou, não sei se realmente me irei encontrar. De certo modo, um dia irei encontrar-me e obter todas as respostas pela minha maneira diferente de ser e estar, de existir e conviver, de falar e andar. Nunca fui de julgar os que me cercam pelas atitudes e comportamentos; pelo contrário, dava a minha mão e até o ombro amigo para chorarem.", "Na minha vez, ninguém quer saber. Mandam-me passear com palavras como isso é só uma fase. Não que eu quisesse o que dei pela mesma moeda; só queria um pouco mais de compreensão.", "Talvez tais personagens que existem dentro da minha mente tenham sido criadas pela falta de afeto, talvez porque fujo de mim com vergonha de realmente me conhecer. O mais provável é que nunca mais volte a ter contacto com o meu eu de anos atrás. Sinto que o meu subconsciente é um lugar com tom cinzento, onde as cores do arco-íris brilham apenas em momentos de adrenalina.", "Sinto-me preso numa peça teatral sem fim. Segundo Cícero — um dos grandes pensadores e filósofos da Roma Antiga —, as pessoas são personagens. Nas peças teatrais da mesma Roma Antiga, os que interpretavam tais personagens usavam máscaras para determinar a sua função na peça ou na sociedade.", "Na sociedade atual, todos somos atores — cada um usa uma máscara para interpretar uma personagem.", "Dentro da minha mente, ergue-se um palco onde uma peça sem roteiro fixo é encenada. Cada personagem que entra em cena é uma projeção de mim mesmo, uma máscara que criei ao longo do tempo para desempenhar papéis específicos: o eu que a sociedade exige, o eu que sonho ser, o eu que escondo, e o eu que não compreendo.", "A peça é marcada por uma constante mudança de cenários, que refletem as crises existenciais e as dúvidas que me assombram. O protagonista — o meu verdadeiro eu — raramente aparece, preso na sombra dos papéis que outros impuseram ou que escolhi por necessidade. As vozes dos personagens ecoam como diálogos de uma tragédia:", "— A Máscara da Razão proclama: Segue as expectativas, encaixa-te. O mundo não tolera quem não cumpre as suas regras — seja isto, faça aquilo…", "— A Voz do Medo sussurra: Se te revelares, serás julgado. Fica na sombra, onde estás seguro, onde ninguém nunca irá procurar-te.", "— O Grito da Alma responde: Mas e eu? Quando será a minha vez de ser ouvido? Não posso permanecer eternamente neste silêncio opressor e pesado! Também tenho o meu papel — quando será a minha vez?…", "Por vezes, os personagens discutem.", "O coração cria emoções, a mente revolta-se.", "O coração cria emoções, mas a mente revolta-se. Há um conflito dentro de mim — um constante embate entre o desejo de sentir e o medo de existir. Vivo na sombra, não por escolha, mas porque a luz expõe aquilo que temo revelar. A sociedade observa com olhos frios e julgadores, pronta para reduzir qualquer diferença a um rótulo ou, pior ainda, ignorá-la como se fosse invisível.", "O coração anseia por se abrir, por confiar, por amar. Mas a mente, essa, aprendeu com as pancadas da vida que é mais fácil revoltar-se, proteger-se e erguer muros em vez de construir pontes. No entanto, a revolta traz consigo um peso, uma dor profunda. É como se carregasse o fardo de um grito preso na garganta — um apelo por atenção que nunca chega.", "Na sombra, observo aqueles que vivem sob a luz, sem medo de serem vistos. Admiro a sua coragem, mas não consigo imitá-los. A sombra é ao mesmo tempo um refúgio e uma prisão. É o espaço onde as minhas emoções fervilham em segredo, enquanto a mente me mantém sob controlo, temendo o impacto de me revelar ao mundo.", "Quero gritar. Quero quebrar as correntes que me prendem à escuridão. Mas o medo do vazio é maior. Porque sei que, muitas vezes, o grito não encontra eco. Sei que a sociedade prefere o silêncio das sombras ao som da verdade. Assim, permaneço aqui — esperando por um dia em que a luz seja acolhedora, não opressiva, e que o mundo tenha ouvidos prontos para ouvir quem sou."], "reflection": ["Respira.", "Todos usamos máscaras.", "Reconhecer a sombra já é um primeiro gesto de coragem."]}, {"slug": "tempo", "title": "Tempo", "subtitle": null, "kind": "poem", "cycle": 2, "body": ["Mas o que seria o tempo para mim?", "O que seria existir? O que seria viver?", "O que seria estar dentro do meu tempo?", "Às vezes pergunto-me: por que vivo tão longe daquilo que seria a vida?", "Por que o errado parece certo?", "Por que viver sem propósito, sem algo que tenha um verdadeiro sentido?", "Muitos dizem que a vida é curta e que o tempo é escasso.", "Vive a vida, pois ela é única, dizem eles.", "Mas… para quê viver em lugares onde o meu espírito não se sente confortável?", "Onde o pecado me cega?", "Onde o álcool não alimenta a verdade que deseja habitar o meu coração?", "O tempo perguntou ao tempo quanto tempo o tempo tem.", "E há quem esteja morto e simplesmente caminhe para a perdição…", "Em vez de buscar viver novamente.", "Por que desperdiçar o tempo que não temos em prazeres momentâneos, sem nada que construa a nossa alma?", "Gostaria de ter tempo…", "Tempo para encontrar as respostas que tanto procuro.", "Queria ter tempo para viver da forma certa.", "Mas viver da forma certa não tem a ver com viver sem errar, pois nenhum bebé aprende a caminhar sem cair.", "Viver da forma certa tem a ver com reconhecer os meus erros, por mais que eu esteja caído.", "Tem a ver com levantar, seguir em frente, e realmente carregar o meu aprendizado, sem me contentar com lamentações e ciclos viciosos sem fim, que abatem o meu espírito… e o meu físico.", "Atos 2:40", "Salvai-vos desta geração perversa."]}, {"slug": "lost", "title": "Lost…", "subtitle": null, "kind": "prose", "cycle": 2, "body": ["Mas onde será que estou, onde será que o meu coração está…", "Por vezes fico exausto de pensar tanto em coisas sem nexo. Cansei de sentir dor por magoar tanta gente.", "Cansei de nunca me perdoar. Estou preso numa espécie de labirinto emocional.", "Isto é como um videojogo em que, quanto mais subimos de nível, maior é a dificuldade nos próximos…", "O mais incrível é que neste jogo não adianta tentar encontrar a saída do labirinto sem antes me encontrar.", "Mas onde será que me perdi, meu Deus?", "Tentei lidar com a dor antes mesmo de a sentir, mas de que vale o esforço se irei sentir na mesma? Para quê viver sem ser feliz?", "Quero tanto desaparecer que já nem me sinto.", "São tantas vozes na minha cabeça que já nem sei qual é a da verdade, qual é a da razão…", "E onde está a minha?", "Cansei de gritar neste buraco negro. Cansei de sentir dor emocional, ansiedade e depressão…", "Mas será o suicídio uma solução?", "Várias vezes tentei forçar a minha conversa presencial e direta com Deus, mas de nada me valeu.", "Apenas acumulei mais céu cinzento dentro de mim.", "Apenas cavei mais fundo, apenas dei mais força às vozes. Sei lá qual devo realmente ouvir…", "Sinto ódio de mim mesmo.", "Mas por que não consigo ser realmente feliz, mesmo sabendo que Deus me ama tal como sou?", "Onde estou?"], "reflection": ["Respira.", "Nem toda perda é um fim.", "Algumas perdas tornam-se mapas."]}, {"slug": "espirito-bom", "title": "Espírito Bom", "subtitle": null, "kind": "narrative", "cycle": 2, "body": ["Khulo…", "Filho do sol e das colinas das terras zulu, nascido entre o som dos tambores e o cheiro da terra molhada após a chuva.", "Desde pequeno, trazia no peito o fogo dos antigos e a vontade de proteger os seus.", "Dizia-se que o seu coração batia no mesmo ritmo que os passos dos guerreiros do passado.", "Mas o que poucos viam era o peso que ele carregava — a sede de ser forte, a necessidade de não cair diante dos olhos dos outros.", "Khulo acreditava que a grandeza vinha do sacrifício, e o sacrifício, do silêncio.", "Assim, ele calava as suas dores, escondia as suas fraquezas, e sorria mesmo quando o peito já não aguentava mais.", "\"Indoda ifel' isilonda\" — dizia sempre.", "Ele levava essa frase como um escudo e uma prisão.", "Acreditava que servir era o caminho para a eternidade, e ser servido era sinal de fraqueza.", "Khulo vivia para os outros…", "E nesse viver, esqueceu-se de si.", "Recusava ajuda, não por orgulho, mas porque pensava que aceitar cuidado o tornaria menos homem.", "Não sabia que o verdadeiro guerreiro não é o que sangra calado…", "Os anos passaram, e o nome de Khulo já ecoava entre os jovens da aldeia.", "Era o primeiro a acordar, o último a descansar.", "Honrava o rei, respeitava os anciãos, e acreditava que a sua vida só teria sentido se fosse útil ao seu povo.", "Mal sabia que o destino o observava de longe, com olhos de quem prepara a lição mais dura — aquela que só a dor ensina…", "Certa manhã, o general das tropas do rei chegou.", "Com voz firme, anunciou:", "O inimigo se aproxima. Todos os jovens de sangue forte devem preparar-se para a grande batalha.", "Os tambores soaram como trovões.", "Khulo sentiu o coração arder — finalmente teria a chance de provar o seu valor, de mostrar que a sua força não era apenas aparência.", "Durante dias, treinou sob o sol escaldante, sentindo o peso da lança e o gosto da poeira.", "Cada golpe era uma oração.", "Cada gota de suor, uma promessa.", "E então… chegou o dia.", "A batalha rugia nas terras bantu como um trovão antigo.", "O chão tremia, o ar cheirava a ferro e fogo.", "Khulo avançava na linha de frente, gritando com o peito aberto:", "Ngath' uZulu! Ngath' uMande! Ngath' izwe lonke!", "Mas no auge da guerra, o general ordenou a retirada.", "Khulo, preso à ideia de nunca recuar, continuou a lutar, cego pela crença de que desistir era morrer de vergonha.", "Um companheiro, vendo o perigo, correu até ele.", "— Khulo! O general mandou recuar!", "Mas ele não ouvia — o som da batalha era mais alto que a razão.", "Foi preciso que o amigo o puxasse à força.", "Enquanto o batalhão se retirava, Khulo olhou para trás e viu o seu general — o homem que sempre admirara — apontado por uma azagaia inimiga.", "Sem pensar, Khulo correu.", "E no último instante, colocou-se na frente da lança.", "O ferro rasgou-lhe o peito…", "O tempo parou.", "Enquanto caía, ele sentiu o mundo ficar leve.", "O vento sussurrou entre os tambores da alma:", "\"Eis o teu sonho, filho Zulu… morrer pelos teus.\"", "Khulo sorriu, mas era um sorriso triste…", "Nos seus últimos segundos, entendeu o que o silêncio nunca lhe contara: que o verdadeiro guerreiro não é aquele que morre pelo seu povo, mas aquele que vive por ele e por si.", "O seu corpo caiu, mas o espírito permaneceu…", "Parecer não é ser…", "Servir é nobre, mas esquecer-se de si é morrer em vida.", "Khulo, o espírito bom…"]}, {"slug": "diferente", "title": "Diferente…", "subtitle": null, "kind": "prose", "cycle": 3, "body": ["Eu só queria ser eu — alguém que pudesse ser aquilo que realmente nasceu para conquistar, despertar, manifestar a minha vontade de vencer: o meu verdadeiro ser.", "Mas, perante a sociedade, isso é visto como uma afronta aos padrões estabelecidos pelos donos dela.", "Quero ser a diferença, quero mostrar que na simplicidade existe felicidade. Quero viver, caminhar e respirar em liberdade. Quero cantar, gritar e até dançar…", "Mas, perante a sociedade, serei considerado apenas mais um louco, mais um iludido que realmente acha que alguém se importa, mais um que acredita que isto poderá despertar ou acordar alguém.", "Em noites de chuva, o choro acompanha o céu cinzento no meu quarto. Sempre fui de ficar no meu canto. Alguns chamaram-me antissocial e doente mental.", "Eu só queria materializar a liberdade que a minha mente fantasia, trocar as leis da sociedade pelas leis da felicidade…", "Mas os que vivem nesta geração, refugiados na ignorância, oprimem a minha diferença, a minha existência, o meu ser, a minha independência.", "Sofro por não ser como vocês. Escondo a minha nudez e vocês dizem que é sensatez.", "Na sociedade em que vivo, todos possuem duas faces; uns mostram uma com medo de revelar a outra e serem julgados.", "Querer não é ter e desejar não é realizar.", "Um dos meus maiores sonhos é libertar todo ser oprimido, julgado, criticado, abusado psicologicamente.", "Quero dar vida às telas brancas, dar vida a cada traço de tinta, mostrar que até na poça de lama mais profunda e suja existe ouro.", "Quero provar que não há limites para os diferentes, que sem vontade de vencer não se vai longe, que a diferença pode marcar presença na sociedade e acordar até a mente mais preguiçosa e adormecida.", "É que no meio dos escravos, há sempre quem quer ser rei.", "Vim para mostrar que a minoria pode fazer a diferença. Que até o ser mais insignificante pode derrubar gigantes.", "Recuso-me a fazer o que a maioria faz, a ouvir o que outros ouvem, a falar como outros falam.", "Todos têm a oportunidade de ser a minoria e provar que a diferença tem presença.", "Que a liberdade física não é tudo, que a sinceridade é muito, que podemos trazer de volta a luz da esperança a uma geração perdida no senso comum."], "reflection": ["Respira.", "Ser diferente não é ser menos.", "A minoria também constrói o mundo."]}, {"slug": "kateco", "title": "Kateco", "subtitle": null, "kind": "narrative", "cycle": 4, "body": ["Esta é a história de Kateco, um jovem moçambicano nos tempos atuais.", "Kateco é alguém que olha para a sociedade moçambicana de forma diferente. Ele percebe que aquele moçambicano que antes sentia orgulho da sua pele, hoje a discrimina — só a exalta em momentos de debates raciais. Fora isso, nega a sua moçambicanidade.", "Para muitos, ser negro e africano passou a ser um fardo silencioso, algo que se esconde por trás de roupas de marca importada.", "Uma das questões que mais inquieta Kateco é:", "O que é ser livre e independente como moçambicano?", "Ao longo dos anos, vagando pelas histórias alegres e sofridas vividas nas terras do povo de descendência Tsonga e Xhona, ele descobre que os tambores de guerra já não tocam como antes. Os rituais e os ritos à fogueira já não agradam ao moçambicano atual. Este mesmo colocou na sua cabeça que aquilo já não é para ele.", "Kateco percebeu que os moçambicanos já não são os mesmos.", "Perdemos o espírito de humildade, união e identidade. Já não existe amor pela cultura, nem respeito pelos traços das batalhas travadas contra o tirano opressor que roubou a nossa terra e as nossas riquezas.", "Hoje, muitos africanos preferem alimentar o desejo de serem iguais aos europeus — porque eles pensam, eles inventam, eles criam, eles modernizam, eles são mais capacitados, mais avançados… E nós?", "Assim seguimos, convencidos de que tudo o que vem de fora é melhor.", "Lutámos arduamente, sem cessar e sem calar o nosso grito por liberdade durante 10 anos.", "E agora, 50 anos depois da independência, desvalorizamos aquilo que é nosso e vendemo-nos por peças de roupa ou carros novos. Apenas se atualizou o sistema de troca de bens…", "Hoje, aquele moçambicano que escrevia poesias de combate escreve comentários desagradáveis e ofensivos para se sentir superior ao seu irmão de pele ou etnia.", "Nenhum tirano nos irá escravizar — engraçado, não?", "Hoje, somos nós próprios que nos escravizamos e nos vendemos a custo de nada.", "Pior ainda: vendemo-nos em troca de orgulho e arrogância.", "Milhões de braços, uma só força?", "Como? Se os moçambicanos estão mais divididos do que nos tempos da guerra civil?", "Tudo por uma mera questão de poder e ganância.", "Kateco sente saudades daquele tempo em que ser moçambicano era algo que enchia o coração de orgulho.", "Na verdade, ainda é — só que para poucos.", "O sol de Junho para sempre brilhará?", "Isso só para alguns.", "Para outros, a vida continua às escuras.", "Há bairros sem luz, escolas sem carteiras, hospitais sem medicamentos.", "Mas há ministérios com carros de luxo, viagens ao estrangeiro e festas com champanhe.", "Moçambique, nossa terra gloriosa…", "Sim, gloriosa será — mas também será o túmulo de muitos com a mente engatilhada, pronta a disparar para acordar este país surdo.", "Mas o silêncio é cómodo, e silencia a verdade.", "Mas com tantos problemas, onde está o Governo?", "O mesmo governo que nos pede para poupar é o exemplo de como esbanjar.", "Que hipocrisia!", "Kateco nota que o governo que outrora nos libertou é hoje o mesmo que nos rouba e mata — lentamente, alimentando o espírito consumista e a alienação coletiva.", "Neste mesmo país independente, barracas são públicas e escolas são privadas.", "Como é que uma nação com capacidade para produzir só importa e pouco exporta?", "Investe-se mais em álcool e corrupção do que em educação e consciência.", "Kateco, como jovem desta nação, procura formas de libertar a sua mente e a de outros jovens moçambicanos — através de textos, reflexões e provocações.", "Mas estes mesmos jovens que reclamam da condição do país, nada fazem para mudá-lo.", "E assim, 50 anos depois…", "Ainda somos dependentes.", "Só que agora, das nossas próprias escolhas."]}, {"slug": "muthemba", "title": "Muthemba", "subtitle": null, "kind": "narrative", "cycle": 4, "body": ["Esta é a história do Muthemba, o jovem bantu nos tempos atuais…", "Muthemba é um jovem africano, moçambicano, que perante a sociedade africana atual percebeu que os africanos já não são os mesmos — que já não têm aquele espírito de humildade e união, que perderam o amor pela cultura, que ignoram os traços das batalhas travadas contra o tirano opressor que roubou a nossa terra e as nossas riquezas. Que estes mesmos africanos querem orgulhar-se de se alimentar dos desejos de serem iguais aos europeus, os ditos brancos: pois eles pensam, eles inventam, eles criam, eles modernizam, eles são mais capacitados e mais avançados.", "Muthemba, após perceber isso, tenta de formas diferentes e diversas trazer esse espírito de cultura e religião africana.", "Durante o tempo em que Muthemba começa a fazer uma autocrítica de si mesmo como africano e da sociedade em que vive, chega à conclusão de que devia mudar a si próprio e trazer a sua mudança para a sociedade. Então decide escrever textos que exaltam a cultura e o sangue africano tribal, revivendo os ritmos do tambor africano, trazendo a beleza dos rituais e ritos africanos tribais.", "Ele começa a estudar sobre o passado africano e descobre que a África não é só o berço da humanidade, mas também dos ritmos, das fábulas, dos contos à fogueira e da negritude.", "Mas Muthemba enfrenta grandes desafios como:", "A falta de identidade, a ignorância, a hipocrisia, a corrupção do governo, a arrogância, a injustiça, a ganância, a inveja, a lavagem cerebral, a falsidade, a discriminação da pele negra…", "Mas Muthemba teve a ideia de escrever um texto que dizia: Branco africano.", "A sociedade africana não é mais a mesma. Aquele africano que vivia da simplicidade hoje vive dos frutos da arrogância. Aquele africano que vivia da humildade hoje vive de aparências — pois por que não copiar, se podemos imitar e nacionalizar?, tornar algo branco em preto.", "Muitos são pretos só e orgulham-se da sua cor em momentos de questões raciais.", "Na tentativa de exaltar a mente jovem africana, mas esta mesma mente ocupa-se em participar de festas e em consumir álcool.", "Em certa parte das suas críticas e análises à sociedade africana, ele percebe que a mulher africana, moçambicana, só exalta a sua capulana em dias como o 7 de abril. E que esta mesma mulher ou jovem africana está sempre à procura de algo que a deixe mais bela — e claro, menos ela mesma.", "E que esta mesma foi dos penteados típicos africanos para as perucas e extensões de cabelo.", "A mulher que não é branca, mas adora parecê-lo.", "Esta mesma mulher trocou o seu aroma natural por perfumes árabes e europeus. Esta mesma mulher prefere e conhece as línguas estrangeiras — como o inglês — e despreza as línguas de origem bantu. Esta mesma mulher negra acredita que só com maquilhagem fica bonita. Esta mesma mulher que sente vergonha do seu aspeto negro, do seu cabelo e da sua estrutura corporal bela.", "Muthemba percebe que existem negros que se sentem superiores a outros devido a condições de vida que criam uma espécie de desigualdade económica e social.", "Ele percebe que só os que têm dinheiro se entendem — e os negros pobres sempre serão vistos como maltrapilhos e sujos, enquanto os negros com dinheiro não passam de negros também. Existem negros que matam negros para se sentir poderosos.", "Uma das coisas que ele busca trazer para a sociedade africana atual são os instrumentos e ritmos africanos, a poesia e os contos bantu.", "Ele também percebe que o negro irá sempre ser ou sentir-se submisso ao bom patrão branco.", "Muthemba percebe que irá andar sem companhia se gritar pela cultura. Percebe que o negro não respeita mais a sua cultura, a sua língua nem o seu sangue africano tribal.", "Ele entende finalmente que somos — ou estamos a caminho de ser — pobres em termos de tribalismo e negritude.", "Fotocópia de uma cultura não se autentica."], "reflection": ["Respira.", "Uma cultura copiada nunca se autentica.", "A raiz lembrada é a raiz que continua viva."]}, {"slug": "revoltado", "title": "A prosa do revoltado", "subtitle": null, "kind": "prose", "cycle": 5, "body": ["Bipolaridade é uma coisa que me transtorna — sei que sou meio confuso e complicado…", "Na verdade, sou uma espécie de baralho de cartas.", "Sinto-me um joker usado para jogadas sujas.", "Tento fugir de mim mesmo, do meu medo, da minha consciência, da minha raiva pelo universo.", "Isto não é só sobre mim — é pelas coisas que quero alcançar e demonstrar para a sociedade…", "Mas a questão que me limita: como?", "Sinto-me preso a mim mesmo, à espera de alguém notar o meu sofrimento silencioso, à espera de uma luz no fim do túnel, à espera de sentir a verdadeira presença da esperança, à espera de um braço que possa me puxar do poço profundo de sentimentos confusos em que me encontro.", "O meu ódio pela minha geração só aumenta — crianças que dão de tudo para parecer melhor que as outras em público, mas no privado não passam de seres que só querem esconder os seus segredos e medos.", "Sempre fui justo com os justos e injustos, mas ninguém dava importância.", "Sempre quis que todos vissem o lado bom de viver a vida na simplicidade, mas isso pouco importa… O que realmente importa nos tempos atuais é parecer superior aos outros.", "Muitos falam sobre solidariedade, poucos contribuem para tal.", "E as jovens moças — que quanto menos roupa usam em público mais bonito o seu corpo é —, falam tanto do abuso às mulheres, mas sem dar esforços no coletivo. Muitas pouco se importam com o que realmente acontece com as outras.", "E os jovens rapazes atuais — para eles, quanto mais mulheres se envolvem, mais incríveis são para as outras; quanto mais festas frequentam, mais estatuto social têm; quanto mais visualizações têm nas redes sociais, mais destacados entre os seus. Fazer sexo com várias mulheres é que está na moda para eles.", "Sentimentos — o que é isso nos tempos atuais?", "Sinto-me revoltado com a sociedade atual e, principalmente, com os que vivem nela: não valorizam nada a não ser o seu ego e orgulho. Poucos são aqueles que realmente estão acordados e prontos a confrontar a sociedade.", "O que é o amor?", "Segundo Leonardo da Vinci — um polímata de destaque no Alto Renascimento e uma das figuras mais influentes desse período —, o amor é como uma consequência direta do conhecimento e da compreensão. Para ele, o amor não era apenas uma emoção romântica, mas um princípio universal que surge da apreciação profunda da beleza e da harmonia presentes na natureza e na vida. Ele acreditava que quanto mais uma pessoa entende e conhece algo ou alguém, mais é capaz de amar. Assim, o amor, para Da Vinci, estava ligado à curiosidade, ao aprendizado e à conexão com o mundo natural e humano.", "O amor nos tempos passados era algo que só os dignos conheciam, que os verdadeiros poetas tinham como refúgio para os seus sentimentos.", "A palavra amar antigamente era algo incrível — algo que só os apaixonados conheciam, algo esplêndido, deslumbrante e caloroso.", "Para se amar antigamente, bastava só escrever poemas e prosas de encantar e derreter o coração da mais fria dama. Bastavam rosas e flores de apaixonar. Bastava só um jantar à luz de velas de encantar a alma. O preço a pagar pelo amor antigamente era o romantismo e uma simples palavra: eu amo-te.", "Amar não era piada, não era engraçado para os palhaços, não era motivo de chacotas.", "Nos tempos atuais em que vivemos, para se amar alguém existem várias condições.", "Hoje amar alguém profundamente é como perder tempo. Amar não tem significado se não for demonstrado com bens materiais. Amar não é nada sem presentes a todo o momento.", "Para se amar alguém nos tempos atuais, é preciso ser um palhaço sem circo.", "Mas será que vale a pena lutar por uma causa perdida…?", "Pergunto-me a cada amanhecer como o mundo foi se tornar tão vazio, tão ensurdecido por vozes que não buscam entender — apenas grito mais alto, mas ninguém ouve. Observo ao redor e vejo rostos desinteressados, olhos que desviam das perguntas essenciais, mentes absorvidas pelo brilho fugaz do que é imediato, do que é raso. E resta a indignação — a revolta quase silenciosa de quem sabe que o conhecimento, o verdadeiro saber, é o que sustenta, o que eleva. Mas quem ainda quer ser elevado?", "Sempre serei alguém que não quer se conformar. Tento de todas as formas — em palavras que nascem à margem, nos atos que se tornam pequenos rituais de resistência — é como acender uma faísca em meio à névoa da ignorância. Acredito que conviver é mais do que aceitar a superfície; é escavar a essência, é descobrir-se e descobrir o outro. Mas na sociedade em que vivo, todos parecem capturados pelos seus próprios reflexos, encurralados em espelhos que só refletem o próprio ego.", "Quero que um dia se possa vislumbrar as pessoas a buscarem conhecimento — não por status, não como um troféu, mas como uma necessidade, um desejo de transcender as limitações do agora. Ambiciono quebrar essas correntes de orgulho vazio, mostrar que há liberdade em reconhecer a própria ignorância, que há um poder profundo em cada pequena descoberta, em cada novo ângulo de visão.", "E assim caminho… um grito num mundo de silêncios ensurdecedores. Mesmo sem certeza de que serei ouvido, não irei render-me. A cada gesto, a cada palavra, semear um pensamento, uma ideia, uma possibilidade. Quem sabe, um dia, a chama se espalhe. E o mundo, então, despertará para a beleza de ser incompleto e sempre buscador."], "reflection": ["Respira.", "A revolta também pode ser amor com raiva.", "O grito de hoje pode ser a mudança de amanhã."]}, {"slug": "posfacio", "title": "Posfácio", "subtitle": "A Travessia Continua…", "kind": "prose", "cycle": 0, "body": ["Ao terminar esta coletânea, percebo que escrever nunca foi apenas um ato de coragem — foi um espelho.", "E cada palavra aqui deixou claro que a verdadeira transformação não começa no mundo, mas no lugar mais difícil de acessar: nós mesmos.", "Esta não é uma obra sobre culpa.", "Não é sobre apontar dedos, nem sobre carregar o peso do que falhou.", "É sobre reconhecer onde estamos, o que sentimos, e quem podemos nos tornar.", "É sobre entender que crescer dói, mas não destrói.", "E que o autoconhecimento não é punição — é libertação.", "Se alguma destas páginas te fez parar, respirar fundo e encarar a tua própria sombra, então já começaste a mudança.", "E mudar não é sobre apagar o passado, mas sim aprender a caminhar com ele sem deixar que ele te guie.", "Que este livro seja só o início da tua própria busca, porque ninguém muda o mundo sem primeiro mudar a própria alma.", "E a travessia, por mais longa que seja, vale sempre a pena…"]}, {"slug": "nota-autor", "title": "Nota do Autor", "subtitle": null, "kind": "prose", "cycle": 0, "body": ["Olá.", "Se te vês em todos estes textos, ou apenas em alguns, quero que saibas uma coisa:", "Tu não és fraco.", "Só estás cansado de carregar o mundo sozinho… principalmente o teu mundo.", "Engraçado, né?", "Sofremos dentro do nosso próprio universo, como se fosse um planeta feito só para nós.", "Mas não faz mal.", "Infelizmente, o sofrimento nasceu connosco, assim como o erro, assim como o pecado.", "Mas não vivemos disso.", "Vivemos da força de continuar, mesmo quando a alma pede pausa.", "Então respira.", "Levanta a cabeça.", "O teu caminho ainda tem muita luz — mesmo que por agora só consigas ver a sombra.", "Um abraço,", "E obrigado por partilhares esta viagem comigo…"]}]}
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  var DATA = JSON.parse(document.getElementById('margem-data').textContent);
+  var CHAPTERS = DATA.chapters;
+  var CYCLES_META = DATA.cyclesMeta;
+
+  // ---------- Supabase backend ----------
+  var SUPABASE_URL = 'https://tjkjkxvmhjanrvfmuoxu.supabase.co';
+  var SUPABASE_KEY = 'sb_publishable_bbccyoAEjf3stxuS6uWfYA_XQb9dZqq';
+  var sb = null;
+  try {
+    if (window.supabase && window.supabase.createClient) {
+      sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    }
+  } catch (e) { sb = null; }
+
+  function insertVisitor(record){
+    if (!sb) return;
+    sb.from('visitors').insert(record).then(function(){}, function(){});
+  }
+  function insertName(record){
+    if (!sb) return;
+    sb.from('names').insert(record).then(function(){}, function(){});
+  }
+  function insertMessage(record){
+    if (!sb) return Promise.resolve();
+    return sb.from('messages').insert(record).then(function(){}, function(){});
+  }
+  function insertCompletion(record){
+    if (!sb) return;
+    sb.from('completions').insert(record).then(function(){}, function(){});
+  }
+  function incrementView(slug){
+    if (!sb) return;
+    sb.from('chapter_views').select('views').eq('slug', slug).maybeSingle()
+      .then(function(res){
+        var current = (res && res.data && res.data.views) ? res.data.views : 0;
+        return sb.from('chapter_views').upsert({ slug: slug, views: current + 1 });
+      })
+      .catch(function(){});
+  }
+
+  // ---------- content-protection (best effort; no client-side method is absolute) ----------
+  document.addEventListener('contextmenu', function(e){ e.preventDefault(); });
+  document.addEventListener('dragstart', function(e){ e.preventDefault(); });
+  document.addEventListener('selectstart', function(e){
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+    if (e.target && e.target.closest && e.target.closest('.chap-body')) return; // allow selecting the actual prose
+    e.preventDefault();
+  });
+  document.addEventListener('keydown', function(e){
+    var k = (e.key || '').toLowerCase();
+    var blocked = (e.ctrlKey || e.metaKey) && ['c','x','u','s','p'].indexOf(k) !== -1;
+    if (blocked || k === 'f12') e.preventDefault();
+  });
+
+  function uid(){ return Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,8); }
+
+  // ---------- screen management ----------
+  var screens = {};
+  Array.prototype.forEach.call(document.querySelectorAll('.screen'), function(el){ screens[el.id] = el; });
+  var current = 's-white';
+
+  function show(id){
+    if (screens[current]) {
+      screens[current].classList.remove('active','reveal');
+    }
+    current = id;
+    var el = screens[id];
+    el.classList.add('active');
+    el.scrollTop = 0;
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){
+        el.classList.add('reveal');
+      });
+    });
+    window.scrollTo(0,0);
+  }
+
+  var marginLine = document.getElementById('marginLine');
+  function pulseMarginLine(duration){
+    marginLine.classList.add('show');
+    setTimeout(function(){ marginLine.classList.remove('show'); }, duration || 1400);
+  }
+
+  // ---------- opening sequence ----------
+  var isAdminMode = location.search.indexOf('admin') !== -1;
+  if (!isAdminMode) {
+    setTimeout(function(){
+      show('s-welcome');
+      var savedProgress = loadProgress();
+      if (savedProgress) addContinueButton(savedProgress);
+    }, 1600);
+  }
+
+  document.getElementById('btnComecar').addEventListener('click', function(){
+    show('s-gate');
+  });
+
+  document.getElementById('btnSim').addEventListener('click', function(){
+    show('s-form');
+    setTimeout(function(){ var f = document.getElementById('inpName'); if (f) f.focus(); }, 700);
+  });
+  document.getElementById('btnAindaNao').addEventListener('click', function(){
+    show('s-notyet');
+  });
+  document.getElementById('btnVoltarGate').addEventListener('click', function(){
+    show('s-gate');
+  });
+
+  var visitorInfo = { name:'', country:'', age:'', found:'' };
+
+  document.getElementById('btnEntrar').addEventListener('click', function(){
+    visitorInfo.name = document.getElementById('inpName').value.trim();
+    visitorInfo.country = document.getElementById('inpCountry').value.trim();
+    visitorInfo.age = document.getElementById('inpAge').value.trim();
+    visitorInfo.found = document.getElementById('inpFound').value.trim();
+
+    var ageNum = parseInt(visitorInfo.age, 10);
+    insertVisitor({
+      country: visitorInfo.country || 'Não informado',
+      age: isNaN(ageNum) ? null : ageNum,
+      found: visitorInfo.found || null
+    });
+    if (visitorInfo.name) {
+      insertName({ name: visitorInfo.name });
+    }
+
+    pulseMarginLine(1800);
+    setTimeout(function(){
+      show('s-logo');
+      setTimeout(function(){
+        show('s-quote');
+        setTimeout(function(){
+          show('s-cover');
+        }, 3600);
+      }, 3200);
+    }, 500);
+  });
+
+  document.getElementById('btnAbrirLivro').addEventListener('click', function(){
+    pulseMarginLine(1200);
+    setTimeout(function(){
+      startReading();
+    }, 500);
+  });
+
+  // ---------- reader ----------
+  var idx = 0;
+  var readerBody = document.getElementById('readerBody');
+  var totalChapters = CHAPTERS.length;
+  var readStartTime = null;
+  var maxIdxReached = 0;
+
+  // ---------- cycle index (drawer) ----------
+  var cycleChapters = {};
+  CHAPTERS.forEach(function(c, i){
+    if (c.cycle) {
+      if (!cycleChapters[c.cycle]) cycleChapters[c.cycle] = [];
+      cycleChapters[c.cycle].push({ idx:i, title:c.title });
+    }
+  });
+  function lastIdxOfCycle(n){
+    var arr = cycleChapters[n];
+    if (!arr || !arr.length) return -1;
+    return arr[arr.length - 1].idx;
+  }
+  function cycleCompleted(n){
+    var last = lastIdxOfCycle(n);
+    return last >= 0 && maxIdxReached >= last;
+  }
+  var btnIndex = document.getElementById('btnIndex');
+  var indexDrawer = document.getElementById('indexDrawer');
+  var indexContent = document.getElementById('indexContent');
+  document.getElementById('btnCloseIndex').addEventListener('click', function(){
+    indexDrawer.classList.remove('show');
+  });
+  btnIndex.addEventListener('click', function(){
+    renderIndexDrawer();
+    indexDrawer.classList.add('show');
+  });
+  function updateIndexAvailability(){
+    var c = CHAPTERS[idx];
+    var cyc = c.cycle;
+    var available = !!(cyc && cyc >= 2 && cycleCompleted(cyc - 1));
+    btnIndex.classList.toggle('show', available);
+    if (!available) indexDrawer.classList.remove('show');
+  }
+  function renderIndexDrawer(){
+    var c = CHAPTERS[idx];
+    var cyc = c.cycle;
+    if (!cyc) { indexContent.innerHTML = ''; return; }
+    var html = '<div class="index-cycle-title">' + esc(CYCLES_META[cyc] || ('Ciclo ' + cyc)) + '</div>';
+    (cycleChapters[cyc] || []).forEach(function(item){
+      var read = item.idx <= idx;
+      html += '<div class="index-item' + (read ? ' read' : '') + '"><span class="dot"></span>' + esc(item.title) + '</div>';
+    });
+    var nextCyc = Number(cyc) + 1;
+    if (cycleChapters[nextCyc]) {
+      html += '<div class="index-cycle-title">A seguir: ' + esc(CYCLES_META[nextCyc] || ('Ciclo ' + nextCyc)) + '</div>';
+      cycleChapters[nextCyc].forEach(function(item, k){
+        html += '<div class="index-item locked"><span class="dot"></span>Texto ' + (k + 1) + '</div>';
+      });
+    }
+    indexContent.innerHTML = html;
+  }
+
+  // ---------- resume reading (localStorage) ----------
+  var PROGRESS_KEY = 'margem_progress_v1';
+  function saveProgress(){
+    try {
+      localStorage.setItem(PROGRESS_KEY, JSON.stringify({ idx: idx, maxIdxReached: maxIdxReached, ts: Date.now() }));
+    } catch (e) {}
+  }
+  function loadProgress(){
+    try {
+      var raw = localStorage.getItem(PROGRESS_KEY);
+      if (!raw) return null;
+      var d = JSON.parse(raw);
+      if (typeof d.idx !== 'number' || d.idx < 0 || d.idx >= totalChapters) return null;
+      return d;
+    } catch (e) { return null; }
+  }
+  function clearProgress(){
+    try { localStorage.removeItem(PROGRESS_KEY); } catch (e) {}
+  }
+  function addContinueButton(saved){
+    var wrap = document.querySelector('#s-welcome .wrap');
+    if (!wrap || document.getElementById('btnContinuarLeitura')) return;
+    var chap = CHAPTERS[saved.idx];
+    var btn = document.createElement('button');
+    btn.className = 'btn ghost';
+    btn.id = 'btnContinuarLeitura';
+    btn.style.display = 'block';
+    btn.style.margin = '1em auto 0';
+    btn.textContent = chap ? ('Continuar em «' + chap.title + '»') : 'Continuar leitura';
+    btn.addEventListener('click', function(){
+      idx = saved.idx;
+      maxIdxReached = Math.max(saved.maxIdxReached || 0, saved.idx);
+      readStartTime = Date.now();
+      show('s-reader');
+      renderChapter(idx, true);
+    });
+    wrap.appendChild(btn);
+  }
+
+  function startReading(){
+    idx = 0;
+    maxIdxReached = 0;
+    readStartTime = Date.now();
+    show('s-reader');
+    renderChapter(0, true);
+  }
+
+  function cycleLabelFor(c){
+    if (!c.cycle) {
+      if (c.slug === 'prefacio') return 'Prefácio';
+      if (c.slug === 'posfacio') return 'Posfácio';
+      if (c.slug === 'nota-autor') return 'Nota do Autor';
+      return '';
+    }
+    return CYCLES_META[c.cycle] || '';
+  }
+
+  function renderChapter(i, first){
+    var c = CHAPTERS[i];
+    readerBody.classList.remove('in');
+
+    function paint(){
+      document.getElementById('cycleLabel').textContent = cycleLabelFor(c);
+      document.getElementById('chapEyebrow').textContent = c.subtitle ? c.subtitle : '';
+      document.getElementById('chapTitle').textContent = c.title;
+      var body = document.getElementById('chapBody');
+      body.className = 'chap-body' + (c.kind === 'poem' ? ' poem' : '');
+      body.innerHTML = '';
+      c.body.forEach(function(p){
+        var para = document.createElement('p');
+        para.textContent = p;
+        body.appendChild(para);
+      });
+      document.getElementById('navPrev').disabled = (i === 0);
+      var nextBtn = document.getElementById('navNext');
+      nextBtn.innerHTML = (i === totalChapters - 1 ? 'Terminar' : 'Seguinte') +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
+
+      var pct = Math.round(((i+1) / totalChapters) * 100);
+      document.getElementById('progressFill').style.width = pct + '%';
+      document.getElementById('progressPct').textContent = pct + '%';
+
+      requestAnimationFrame(function(){ readerBody.classList.add('in'); });
+
+      incrementView(c.slug);
+      updateIndexAvailability();
+      if (indexDrawer.classList.contains('show')) renderIndexDrawer();
+    }
+
+    if (first) { paint(); return; }
+    readerBody.style.transition = 'opacity .35s ease';
+    readerBody.style.opacity = '0';
+    setTimeout(function(){
+      var readerScreen = document.getElementById('s-reader');
+      readerScreen.scrollTop = 0;
+      paint();
+      readerBody.style.opacity = '1';
+    }, 350);
+  }
+
+  function goTo(newIdx){
+    if (newIdx < 0 || newIdx >= totalChapters) return;
+    idx = newIdx;
+    if (idx > maxIdxReached) maxIdxReached = idx;
+    renderChapter(idx);
+    saveProgress();
+  }
+
+  document.getElementById('navPrev').addEventListener('click', function(){ goTo(idx - 1); });
+
+  document.getElementById('navNext').addEventListener('click', function(){
+    var c = CHAPTERS[idx];
+    if (idx === totalChapters - 1) {
+      finishBook();
+      return;
+    }
+    if (c.reflection) {
+      showReflection(c.reflection, function(){ goTo(idx + 1); });
+    } else {
+      goTo(idx + 1);
+    }
+  });
+
+  var reflectOverlay = document.getElementById('reflectOverlay');
+  var reflectText = document.getElementById('reflectText');
+  document.getElementById('btnContinuar').addEventListener('click', function(){
+    reflectOverlay.classList.remove('show');
+    if (reflectOverlay._onContinue) reflectOverlay._onContinue();
+  });
+
+  function showReflection(lines, onContinue){
+    reflectText.innerHTML = '';
+    lines.forEach(function(l, k){
+      var p = document.createElement('p');
+      p.textContent = l;
+      p.style.transitionDelay = (k * 0.18) + 's';
+      reflectText.appendChild(p);
+    });
+    reflectOverlay._onContinue = onContinue;
+    reflectOverlay.classList.add('show');
+  }
+
+  function finishBook(){
+    var elapsedSec = readStartTime ? Math.round((Date.now() - readStartTime) / 1000) : null;
+    insertCompletion({
+      country: visitorInfo.country || 'Não informado',
+      elapsed_sec: elapsedSec
+    });
+    clearProgress();
+    show('s-end');
+  }
+
+  // ---------- ending actions ----------
+  document.getElementById('btnEscrever').addEventListener('click', function(){ show('s-write'); });
+  document.getElementById('btnCancelarMsg').addEventListener('click', function(){ show('s-end'); });
+
+  document.getElementById('btnEnviarMsg').addEventListener('click', function(){
+    var msg = document.getElementById('inpMessage').value.trim();
+    if (!msg) return;
+    insertMessage({
+      message: msg,
+      country: visitorInfo.country || 'Não informado'
+    });
+    document.getElementById('inpMessage').value = '';
+    show('s-sent');
+  });
+
+  document.getElementById('btnVoltarFimSent').addEventListener('click', function(){ resetExperience(); });
+
+  document.getElementById('btnPartilhar').addEventListener('click', function(){
+    var shareData = { title: 'MARGEM', text: 'Atravessei a Margem — a coletânea de Erson Mário Zebra.', url: location.href };
+    if (navigator.share) {
+      navigator.share(shareData).catch(function(){});
+    } else if (navigator.clipboard) {
+      navigator.clipboard.writeText(shareData.url).then(function(){
+        var btn = document.getElementById('btnPartilhar');
+        var original = btn.textContent;
+        btn.textContent = 'Link copiado';
+        setTimeout(function(){ btn.textContent = original; }, 1800);
+      });
+    }
+  });
+
+  function resetExperience(){
+    idx = 0;
+    show('s-welcome');
+  }
+
+  document.getElementById('btnRecomecar').addEventListener('click', function(){
+    startReading();
+  });
+
+  // ---------- admin panel (?admin=1) ----------
+  function loadAdmin(){
+    var el = document.getElementById('s-admin');
+    el.innerHTML = '<div style="width:100%;max-width:900px;"><div class="form-eyebrow">Painel</div>' +
+      '<div class="chap-title" style="font-size:2rem;margin-bottom:0;">MARGEM — Administração</div></div>' +
+      '<div class="admin-grid" id="admGrid"></div>' +
+      '<div class="admin-list"><h4>Capítulos mais lidos</h4><div id="admChapters"></div></div>' +
+      '<div class="admin-list"><h4>Países</h4><div id="admCountries"></div></div>' +
+      '<div class="admin-list"><h4>Mensagens de leitores</h4><div id="admMessages"></div></div>' +
+      '<div class="admin-list"><h4>Nomes dos leitores</h4><div id="admNames"></div></div>';
+
+    if (!sb) {
+      el.innerHTML += '<p class="small-note">Ligação à base de dados indisponível.</p>';
+      return;
+    }
+
+    sb.from('visitors').select('country, age').then(function(res){
+      var rows = (res && res.data) || [];
+      var countries = {}; var ages = [];
+      rows.forEach(function(v){
+        var c = v.country || 'Não informado';
+        countries[c] = (countries[c] || 0) + 1;
+        if (v.age) ages.push(v.age);
+      });
+      var avgAge = ages.length ? (ages.reduce(function(a,b){return a+b;},0)/ages.length).toFixed(1) : '—';
+
+      sb.from('completions').select('id', { count: 'exact', head: true }).then(function(cres){
+        var completions = (cres && cres.count) || 0;
+        sb.from('messages').select('id', { count: 'exact', head: true }).then(function(mres){
+          var msgCount = (mres && mres.count) || 0;
+          document.getElementById('admGrid').innerHTML =
+            card(rows.length, 'Visitantes') +
+            card(completions, 'Leituras completas') +
+            card(avgAge, 'Idade média') +
+            card(msgCount, 'Mensagens recebidas');
+        });
+      });
+
+      var sortedCountries = Object.keys(countries).sort(function(a,b){ return countries[b]-countries[a]; });
+      document.getElementById('admCountries').innerHTML = sortedCountries.length
+        ? sortedCountries.map(function(c){ return '<div class="admin-row">' + esc(c) + ' — ' + countries[c] + '</div>'; }).join('')
+        : '<div class="admin-row">Sem dados ainda.</div>';
+    });
+
+    sb.from('chapter_views').select('slug, views').then(function(res){
+      var rows = (res && res.data) || [];
+      rows.sort(function(a,b){ return b.views - a.views; });
+      document.getElementById('admChapters').innerHTML = rows.length
+        ? rows.map(function(r){
+            var titleObj = CHAPTERS.find(function(c){ return c.slug === r.slug; });
+            return '<div class="admin-row">' + esc(titleObj ? titleObj.title : r.slug) + ' — ' + r.views + ' leituras</div>';
+          }).join('')
+        : '<div class="admin-row">Sem dados ainda.</div>';
+    });
+
+    sb.from('messages').select('message, country, created_at').order('created_at', { ascending:false }).then(function(res){
+      var rows = (res && res.data) || [];
+      document.getElementById('admMessages').innerHTML = rows.length
+        ? rows.map(function(m){ return '<div class="admin-row"><strong>' + esc(m.country||'—') + '</strong> — ' + esc(m.message) + '</div>'; }).join('')
+        : '<div class="admin-row">Sem mensagens ainda.</div>';
+    });
+
+    sb.from('names').select('name, created_at').order('created_at', { ascending:false }).then(function(res){
+      var rows = (res && res.data) || [];
+      document.getElementById('admNames').innerHTML = rows.length
+        ? rows.map(function(n){ return '<div class="admin-row">' + esc(n.name) + '</div>'; }).join('')
+        : '<div class="admin-row">Sem nomes ainda.</div>';
+    });
+  }
+
+  function card(n, label){
+    return '<div class="admin-card"><div class="n">' + n + '</div><div class="l">' + label + '</div></div>';
+  }
+  function esc(s){
+    var d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML;
+  }
+
+  if (isAdminMode) {
+    document.getElementById('brandFooter').style.display = 'none';
+    show('s-admin');
+    loadAdmin();
+  }
+
+})();
+
+</script>
+</body>
+</html>
